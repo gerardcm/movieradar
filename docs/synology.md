@@ -28,9 +28,8 @@ cd movieradar
 cp config.example.json config.json
 ```
 
-Edit `config.json` with your real TMDB/OMDb keys and set `output_dir` to
-somewhere Web Station can serve if you want the RSS feed, e.g.
-`/volume1/web/movieradar`.
+Edit `config.json` with your real TMDB/OMDb keys and Telegram bot
+token/chat id.
 
 If DSM doesn't have `git` available natively, install "Git Server" from
 Package Center (it bundles the `git` CLI), or run everything inside a
@@ -82,7 +81,8 @@ curl -O https://raw.githubusercontent.com/gerardcm/movieradar/main/config.exampl
 cp config.example.json config.json
 ```
 
-Edit `config.json` with your real TMDB/OMDb keys, same as Option A.
+Edit `config.json` with your real TMDB/OMDb keys and Telegram bot
+token/chat id, same as Option A.
 
 ### 2. Test it once
 
@@ -103,14 +103,12 @@ Same as Option A's Task Scheduler steps, just with this run command:
 python3 /volume1/scripts/movieradar/run_from_github.py
 ```
 
-Check **"Send run details by email"** here too for the same zero-setup
-notification.
+Check **"Send run details by email"** here too — though since notifications
+now go through Telegram, this is mostly just useful for catching errors
+(missing config, network failures, etc.) rather than day-to-day output.
 
-## Optional: serve the RSS feed
+## Notification file
 
-If `output_dir` in `config.json` points at a folder under Web Station's
-document root (e.g. `/volume1/web/movieradar`), install Web Station from
-Package Center, point a Virtual Host at that folder, and subscribe your feed
-reader to `http://<nas-ip>:<port>/movieradar/rss.xml`. Use your Tailscale/VPN
-setup to read it remotely instead of exposing Web Station to the public
-internet.
+`state.json` lives next to `config.json` and tracks which movies you've
+already been notified about. Delete it (or specific entries) if you ever
+want movieradar to re-notify about everything currently qualifying.

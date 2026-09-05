@@ -1,9 +1,8 @@
-# Secrets / local config — never commit this, it holds your API keys
+# Secrets / local config — never commit this, it holds your API keys and Telegram token
 config.json
 
-# Generated output (reports, rss feed) — keep data out of the repo
-data/
-reports/
+# Runtime state (which movies have already been notified about)
+state.json
 
 # run_from_github.py's runtime-fetched copy of the code — never the source of truth
 _movieradar_fetched.py
