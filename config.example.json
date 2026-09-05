@@ -8,6 +8,7 @@
   "min_votes": 5000,
   "language": "en",
   "min_release_year": 2025,
+  "discovery_buffer_days": 1,
   "max_pages_per_provider": 20,
   "state_file": "state.json",
   "telegram_bot_token": "YOUR_TELEGRAM_BOT_TOKEN",

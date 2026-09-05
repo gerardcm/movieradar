@@ -4,9 +4,14 @@ movieradar.py
 
 Finds movies currently available on streaming (flatrate/free/ads -- not
 rent/buy) across your chosen countries, released on/after a cutoff year,
-filtered by IMDb rating and vote count. Sends a Telegram notification for
-each newly-qualifying movie (state is tracked in state_file so you're not
-renotified every run) and prints a silent-run summary otherwise.
+filtered by IMDb rating and vote count. A movie must first sit for
+discovery_buffer_days (default 1 day) after it's first spotted streaming
+before its IMDb rating/votes are even checked -- this gives IMDb time to
+catch up with review activity for brand-new titles, and avoids wasting OMDb
+lookups on movies that might vanish from a provider the next day. Sends a
+Telegram notification for each newly-qualifying movie (state is tracked in
+state_file so you're not renotified every run) and prints a silent-run
+summary otherwise.
 
 Data sources:
   - TMDB "Discover" API -> which movies are currently streaming, per country
@@ -41,6 +46,7 @@ DEFAULT_CONFIG = {
     "min_votes": 10000,
     "language": "en",
     "min_release_year": date.today().year - 1,
+    "discovery_buffer_days": 1,                   # wait this long after first spotting a title before checking IMDb/notifying
     "max_pages_per_provider": 20,
     "state_file": "state.json",
     "telegram_bot_token": "",
@@ -64,6 +70,7 @@ def load_config(path):
         "MIN_RATING": ("min_rating", float),
         "MIN_VOTES": ("min_votes", int),
         "MIN_RELEASE_YEAR": ("min_release_year", int),
+        "DISCOVERY_BUFFER_DAYS": ("discovery_buffer_days", int),
         "LANGUAGE": ("language", str),
         "STATE_FILE": ("state_file", str),
     }
@@ -173,8 +180,38 @@ def get_imdb_rating(cfg, imdb_id):
     return rating, votes
 
 
-def build_report(cfg):
+def filter_ready_candidates(cfg, state, candidates):
+    """Applies the discovery buffer: a movie only becomes eligible for an
+    IMDb lookup/notification once discovery_buffer_days have passed since it
+    was first seen streaming. Newly-seen movies are recorded in
+    state["first_seen"] (mutated in place) and held back this run. Movies
+    that have dropped out of discovery are pruned from first_seen."""
+    today = date.today()
+    first_seen = state.setdefault("first_seen", {})
+    buffer_days = cfg["discovery_buffer_days"]
+
+    ready = []
+    for m in candidates:
+        tmdb_id = str(m["id"])
+        seen_on = first_seen.get(tmdb_id)
+        if seen_on is None:
+            first_seen[tmdb_id] = today.isoformat()
+            continue
+        if (today - date.fromisoformat(seen_on)).days < buffer_days:
+            continue
+        ready.append(m)
+
+    current_ids = {str(m["id"]) for m in candidates}
+    for tmdb_id in list(first_seen):
+        if tmdb_id not in current_ids:
+            del first_seen[tmdb_id]
+
+    return ready
+
+
+def build_report(cfg, state):
     candidates = discover_streaming_movies(cfg)
+    candidates = filter_ready_candidates(cfg, state, candidates)
     qualifying = []
 
     for m in candidates:
@@ -215,7 +252,7 @@ def load_state(path):
     if os.path.exists(path):
         with open(path) as f:
             return json.load(f)
-    return {"notified_imdb_ids": []}
+    return {"notified_imdb_ids": [], "first_seen": {}}
 
 
 def save_state(path, state):
@@ -247,10 +284,9 @@ def send_telegram_message(cfg, text):
         print(f"Telegram notify failed: {e}", file=sys.stderr)
 
 
-def notify_new_movies(cfg, rows):
-    """Sends one Telegram message per movie not already in state_file, then
-    updates state_file. Returns the list of newly-notified rows."""
-    state = load_state(cfg["state_file"])
+def notify_new_movies(cfg, state, rows):
+    """Sends one Telegram message per movie not already in state["notified_imdb_ids"],
+    then updates that set in place. Returns the list of newly-notified rows."""
     known = set(state.get("notified_imdb_ids", []))
 
     new_rows = [r for r in rows if (r["imdb_id"] or f"tmdb-{r['tmdb_id']}") not in known]
@@ -267,7 +303,6 @@ def notify_new_movies(cfg, rows):
         known.add(key)
 
     state["notified_imdb_ids"] = sorted(known)
-    save_state(cfg["state_file"], state)
     return new_rows
 
 
@@ -277,8 +312,10 @@ def main():
     args = parser.parse_args()
 
     cfg = load_config(args.config)
-    rows = build_report(cfg)
-    new_rows = notify_new_movies(cfg, rows)
+    state = load_state(cfg["state_file"])
+    rows = build_report(cfg, state)
+    new_rows = notify_new_movies(cfg, state, rows)
+    save_state(cfg["state_file"], state)
 
     # Silent run: only print when something new was found.
     if new_rows:

@@ -30,14 +30,15 @@ Edit `config.json`:
 | `min_rating` / `min_votes` | IMDb filter thresholds |
 | `language` | TMDB result language, e.g. `"en"` |
 | `min_release_year` | ignore movies released before this year |
+| `discovery_buffer_days` | wait this many days after a movie first shows up streaming before checking its IMDb rating/votes and possibly notifying (default `1`) |
 | `max_pages_per_provider` | safety cap on TMDB pagination per country |
 | `state_file` | path to the notified-movies tracking file |
 | `telegram_bot_token` / `telegram_chat_id` | from [@BotFather](https://t.me/BotFather) and your chat id |
 
 Every key can also be set via an environment variable (`TMDB_API_KEY`,
 `OMDB_API_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `MIN_RATING`,
-`MIN_VOTES`, `MIN_RELEASE_YEAR`, `LANGUAGE`, `STATE_FILE`) — handy for
-Docker/CI without touching `config.json`.
+`MIN_VOTES`, `MIN_RELEASE_YEAR`, `DISCOVERY_BUFFER_DAYS`, `LANGUAGE`,
+`STATE_FILE`) — handy for Docker/CI without touching `config.json`.
 
 Run it:
 
@@ -62,6 +63,11 @@ from or pushed to GitHub.
 - "Currently streaming" is based on TMDB's watch-provider data for each
   country, which is crowd-sourced and can occasionally lag reality by a few
   days.
+- A newly-discovered movie sits for `discovery_buffer_days` (default 1 day)
+  before its IMDb rating/votes are even checked, so its rating has a little
+  time to reflect actual reviews and we don't burn an OMDb lookup on a title
+  that might disappear from a provider the next day. `state.json` tracks
+  each movie's first-seen date (`first_seen`) to enforce this.
 - OMDb's free tier caps at 1,000 lookups/day — nowhere close to what this
   needs for a normal watchlist size.
 - If you ever want to re-notify about everything currently qualifying,
