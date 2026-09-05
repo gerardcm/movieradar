@@ -62,12 +62,21 @@ Radarr to immediately search for a release.
 
 ## Running it on a schedule
 
-- **Synology**: see [`docs/synology.md`](docs/synology.md) — clone this repo
-  onto the NAS, keep `config.json` local (it's gitignored), and use DSM Task
-  Scheduler to `git pull` + run on a cadence.
-- **Anywhere else**: cron, systemd timer, or a GitHub Actions scheduled
-  workflow all work the same way — `git pull` (or just run against a fresh
-  checkout) then `python3 movieradar.py --config config.json`.
+Two ways to keep the code on your NAS in sync with this repo — pick one:
+
+1. **`run.sh` (git-based)** — clones once, then `git pull --ff-only` before
+   every run. Requires `git` on the host. Good if you want the full repo
+   (docs included) checked out.
+2. **`run_from_github.py` (no git needed)** — fetches `movieradar.py` fresh
+   from `raw.githubusercontent.com` on every run and executes it, no local
+   checkout to keep in sync. Just needs `config.json` sitting next to it.
+   Same "pull from GitHub at runtime" pattern, just for the code itself
+   instead of a config file.
+
+Either way, `config.json` (your real API keys) stays local and is never
+fetched from or pushed to GitHub. See [`docs/synology.md`](docs/synology.md)
+for the exact Task Scheduler setup for both options. Works the same with
+cron, a systemd timer, or a GitHub Actions scheduled workflow elsewhere.
 
 ## Notes / limitations
 

@@ -5,6 +5,9 @@ config.json
 data/
 reports/
 
+# run_from_github.py's runtime-fetched copy of the code — never the source of truth
+_movieradar_fetched.py
+
 # Python
 __pycache__/
 *.pyc
