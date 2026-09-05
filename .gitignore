@@ -1,0 +1,16 @@
+# Secrets / local config — never commit this, it holds your API keys
+config.json
+
+# Generated output (reports, rss feed) — keep data out of the repo
+data/
+reports/
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+.venv/
+venv/
+
+# OS cruft
+.DS_Store

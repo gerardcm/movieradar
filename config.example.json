@@ -1,0 +1,24 @@
+{
+  "tmdb_api_key": "YOUR_TMDB_API_KEY",
+  "omdb_api_key": "YOUR_OMDB_API_KEY",
+  "watch_region": "US",
+  "days_back": 90,
+  "min_imdb_rating": 6.5,
+  "min_imdb_votes": 10000,
+  "release_types": [4, 6],
+  "output_dir": "/volume1/web/movieradar",
+  "output_formats": ["csv", "json", "md", "rss"],
+  "feed_title": "New Streaming Movies (IMDb filtered)",
+  "feed_link": "http://your-nas-address/movieradar/rss.xml",
+  "feed_description": "Movies newly available on streaming, rating >=6.5 and 10k+ IMDb votes",
+
+  "radarr": {
+    "enabled": false,
+    "url": "http://localhost:7878",
+    "api_key": "YOUR_RADARR_API_KEY",
+    "root_folder_path": "/movies",
+    "quality_profile_id": 1,
+    "monitored": true,
+    "search_on_add": false
+  }
+}
